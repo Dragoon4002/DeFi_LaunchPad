@@ -1,64 +1,423 @@
-const web3 = new Web3(Web3.givenProvider);
-let account;
 
-const tokenContract = new web3.eth.Contract(TokenABI, TokenAddress);
-const launchpadContract = new web3.eth.Contract(LaunchpadABI, LaunchpadAddress);
-const liquidityMiningContract = new web3.eth.Contract(LiquidityMiningABI, LiquidityMiningAddress);
-const communityGovernanceContract = new web3.eth.Contract(CommunityGovernanceABI, CommunityGovernanceAddress);
+// Connect to the OpenCampus Network network
+// const Web3 = require('web3');
+const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
 
-// Connect to MetaMask
-async function connect() {
-    const accounts = await web3.eth.requestAccounts();
-    account = accounts[0];
-}
+// Contract details
+const contractAddress = "0x0ffd9955cc4e61766b472243725d160900229529";
+const contractABI = [
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "approve",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "internalType": "string",
+                "name": "symbol",
+                "type": "string"
+            },
+            {
+                "internalType": "uint256",
+                "name": "initialSupply",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "allowance",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "needed",
+                "type": "uint256"
+            }
+        ],
+        "name": "ERC20InsufficientAllowance",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "balance",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "needed",
+                "type": "uint256"
+            }
+        ],
+        "name": "ERC20InsufficientBalance",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "approver",
+                "type": "address"
+            }
+        ],
+        "name": "ERC20InvalidApprover",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "receiver",
+                "type": "address"
+            }
+        ],
+        "name": "ERC20InvalidReceiver",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "sender",
+                "type": "address"
+            }
+        ],
+        "name": "ERC20InvalidSender",
+        "type": "error"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            }
+        ],
+        "name": "ERC20InvalidSpender",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Approval",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "mint",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "Transfer",
+        "type": "event"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "newAdmin",
+                "type": "address"
+            }
+        ],
+        "name": "transferAdmin",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "from",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "to",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transferFrom",
+        "outputs": [
+            {
+                "internalType": "bool",
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "admin",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "owner",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "spender",
+                "type": "address"
+            }
+        ],
+        "name": "allowance",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "account",
+                "type": "address"
+            }
+        ],
+        "name": "balanceOf",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+            {
+                "internalType": "uint8",
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "totalSupply",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+    ];
 
-connect();
+// Create a new contract instance
+const contract = new web3.eth.Contract(contractABI, contractAddress);
 
-// Purchase Tokens
-document.getElementById("purchaseButton").addEventListener("click", async () => {
-    const amount = document.getElementById("tokenAmount").value;
-    const value = web3.utils.toWei((amount * pricePerToken).toString(), "ether");
+// Function to launch a new token
+document.querySelector("button").addEventListener("click", async () => {
+    const tokenName = document.getElementById("launchTokenName").value;
+    const tokenSymbol = document.getElementById("launchTokenSym").value;
+    const tokenPrice = document.getElementById("launchTokenPrc").value;
 
-    await launchpadContract.methods.purchaseTokens(amount).send({ from: account, value });
-    alert("Tokens Purchased Successfully!");
-});
+    try {
+        // Request account access if necessary
+        if (window.ethereum) {
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+        }
 
-// Check Token Balance
-document.getElementById("balanceButton").addEventListener("click", async () => {
-    const balance = await tokenContract.methods.balanceOf(account).call();
-    alert(`Your balance is: ${balance} PTK`);
-});
+        // Get the current connected account
+        const accounts = await web3.eth.getAccounts();
+        const account = accounts[0];
+        
+        // Ensure account is defined
+        if (!account) {
+            throw new Error("No account found. Please make sure your wallet is connected.");
+        }
 
-// Stake Tokens
-document.getElementById("stakeButton").addEventListener("click", async () => {
-    const amount = document.getElementById("stakeAmount").value;
-    await liquidityMiningContract.methods.stakeTokens(amount).send({ from: account });
-    alert("Tokens Staked Successfully!");
-});
-
-// Unstake Tokens
-document.getElementById("unstakeButton").addEventListener("click", async () => {
-    const amount = document.getElementById("stakeAmount").value;
-    await liquidityMiningContract.methods.unstakeTokens(amount).send({ from: account });
-    alert("Tokens Unstaked Successfully!");
-});
-
-// Claim Rewards
-document.getElementById("claimRewardsButton").addEventListener("click", async () => {
-    await liquidityMiningContract.methods.claimRewards().send({ from: account });
-    alert("Rewards Claimed Successfully!");
-});
-
-// Create Proposal
-document.getElementById("createProposalButton").addEventListener("click", async () => {
-    const description = document.getElementById("proposalDescription").value;
-    await communityGovernanceContract.methods.createProposal(description).send({ from: account });
-    alert("Proposal Created Successfully!");
-});
-
-// Vote on Proposal
-document.getElementById("voteButton").addEventListener("click", async () => {
-    const proposalId = document.getElementById("proposalId").value;
-    await communityGovernanceContract.methods.voteOnProposal(proposalId).send({ from: account });
-    alert("Voted Successfully!");
+        // Call the mint function
+        await contract.methods.mint(account, web3.utils.toWei(tokenPrice, 'ether')).send({ from: account });
+        alert("Token launched successfully!");
+        contract.events.Transfer({
+            filter: {from: '0x0000000000000000000000000000000000000000'}, // The minting address (zero address)
+            fromBlock: 'latest'
+        }, (error, event) => { 
+            if (error) console.error(error);
+            else console.log(event);
+        });
+        
+    } catch (error) {
+        console.error("Error launching token:", error);
+        alert("Failed to launch token. Check the console for errors.");
+    }
 });
